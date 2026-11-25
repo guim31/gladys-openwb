@@ -335,7 +335,10 @@ test('a command queued while the broker drops fails, and the next ones still wor
   const sent = broker.published.length;
   broker.openwb = true;
   broker.start();
-  await until(() => world.hub.connected, { what: 'back online' });
+  // The retained state is replayed after the reconnection.
+  await until(() => world.hub.connected && world.hub.state.chargepoints.has('3'), {
+    what: 'back online',
+  });
   assert.equal(broker.published.length, sent, 'nothing sent on reconnection');
   const ack = await fake.sceneAction('set_current', { device: cpId(3), current: 10 });
   assert.equal(ack.success, true, JSON.stringify(ack.error));
