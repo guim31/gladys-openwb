@@ -523,7 +523,9 @@ export class Hub {
     if (!cp.template?.chargemode) {
       throw new ActionFailure(failure('no_profile'));
     }
-    const profile = structuredClone(cp.template);
+    // The latest copy of a shared profile, whichever chargepoint it came through.
+    const latest = this.state.profiles.get(String(cp.template.id ?? ''));
+    const profile = structuredClone(latest ?? cp.template);
     edit(profile);
     const topic = `openWB/set/chargepoint/${cp.id}/set/charge_template`;
     const confirmation = this.#waitFor(() => done(this.state.chargepoints.get(cp.id) ?? cp));

@@ -136,6 +136,8 @@ export class OpenWbState {
     this.bat = { power: null, soc: null };
     this.batModules = new Set();
     this.messages = 0;
+    // Last profile openWB published, per profile id: chargepoints may share one.
+    this.profiles = new Map();
   }
 
   /**
@@ -221,6 +223,9 @@ export class OpenWbState {
         break;
       case 'set/charge_template':
         cp.template = object(value);
+        if (cp.template?.id !== undefined && cp.template?.id !== null) {
+          this.profiles.set(String(cp.template.id), cp.template);
+        }
         break;
       case 'set/log':
         cp.log = object(value);

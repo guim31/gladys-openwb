@@ -340,3 +340,22 @@ test('a command queued while the broker drops fails, and the next ones still wor
   const ack = await fake.sceneAction('set_current', { device: cpId(3), current: 10 });
   assert.equal(ack.success, true, JSON.stringify(ack.error));
 });
+
+test('a profile shared by two chargepoints: each edit starts from the latest copy', async (t) => {
+  const topics = fixture();
+  topics['openWB/chargepoint/4/set/charge_template'] = structuredClone(
+    topics['openWB/chargepoint/3/set/charge_template'],
+  );
+  const broker = new FakeBroker({ topics });
+  const world = await createWorld({ broker });
+  t.after(() => world.app.stop());
+  const { fake } = world;
+  // openWB copies chargepoint 3's change to chargepoint 4 a moment later.
+  const ack = await fake.sceneAction('set_mode', { device: cpId(3), mode: 'eco_charging' });
+  assert.equal(ack.success, true);
+  const second = await fake.sceneAction('set_current', { device: cpId(4), current: 12 });
+  assert.equal(second.success, true, JSON.stringify(second.error));
+  const last = JSON.parse(broker.published.at(-1).payload);
+  assert.equal(last.chargemode.selected, 'eco_charging');
+  assert.equal(last.chargemode.instant_charging.current, 12);
+});
