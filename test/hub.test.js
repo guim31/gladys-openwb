@@ -316,3 +316,27 @@ test('a normal cycle writes nothing at the info level', async (t) => {
   await processed(world);
   assert.deepEqual(logs.stop(), []);
 });
+
+test('a command queued while the broker drops fails, and the next ones still work', async (t) => {
+  const broker = new FakeBroker({ openwb: false });
+  const world = await createWorld({ broker });
+  t.after(() => world.app.stop());
+  const { fake } = world;
+  const first = fake.sceneAction('set_mode', { device: cpId(3), mode: 'stop' });
+  const second = fake.sceneAction('set_current', { device: cpId(3), current: 10 });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  broker.stop();
+  const acks = await Promise.all([first, second]);
+  assert.deepEqual(
+    acks.map((a) => a.success),
+    [false, false],
+  );
+  assert.match(acks[1].error.fr, /pas connectée/);
+  const sent = broker.published.length;
+  broker.openwb = true;
+  broker.start();
+  await until(() => world.hub.connected, { what: 'back online' });
+  assert.equal(broker.published.length, sent, 'nothing sent on reconnection');
+  const ack = await fake.sceneAction('set_current', { device: cpId(3), current: 10 });
+  assert.equal(ack.success, true, JSON.stringify(ack.error));
+});

@@ -70,7 +70,7 @@ Se crea cuando la openWB mide alguno de estos elementos:
 El widget **openWB** muestra solar, casa y red en mosaicos, una línea por punto de carga (estado, potencia,
 batería, modo) y la batería de la casa, y botones de modo para un punto de carga (elegido en los ajustes del
 widget, si no el primero): Inmediata, Solar, Eco y Parada con el control permitido, solo Parada si no. El modo
-actual lleva una marca. Dos ajustes ocultan los mosaicos y los botones.
+actual lleva una marca. Tres ajustes ocultan los mosaicos, las líneas de los puntos de carga y los botones.
 
 ## Disparadores de escena
 
@@ -116,5 +116,8 @@ un mensaje.
 - Cambiar el modo o la intensidad modifica el **perfil de carga** activo en el punto de carga, como la simpleAPI de
   openWB. Si otros puntos de carga o vehículos comparten este perfil, la openWB también les aplica el cambio (salvo
   si sus «perfiles de carga temporales» están activos).
+- **Parada no requiere el control, y perdura**: sin perfiles de carga temporales, se guarda en el perfil del
+  vehículo; salga de ella desde la openWB, o permita el control en Gladys. Con perfiles temporales, la openWB vuelve
+  al perfil del vehículo al desconectarlo: un modo elegido desde Gladys termina con la sesión.
 - Los planes de carga con objetivo, la carga programada y los ajustes de batería no se modifican desde Gladys.
 - Desarrollada sin el hardware: sus comentarios son bienvenidos en el foro.

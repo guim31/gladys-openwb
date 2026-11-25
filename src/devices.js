@@ -300,7 +300,9 @@ export function buildStates(gladys, state, structure, sessions = new Map()) {
       continue;
     }
     const c = adder(chargepointIds(gladys, shape.id));
-    c.text('mode', modeOf(cp) ?? undefined);
+    // A mode Gladys does not offer (bidirectional charging) would be an invalid choice.
+    const mode = modeOf(cp);
+    c.text('mode', MODES.includes(mode) ? mode : undefined);
     if (cp.plugged !== null) {
       c.value('plugged', cp.plugged ? 1 : 0);
       c.value('charging_state', chargingStateOf(cp));

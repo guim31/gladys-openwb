@@ -82,4 +82,8 @@ test('configuration: defaults, types, a host typed as a URL', () => {
   assert.equal(config.allow_control, true);
   assert.equal(config.language, 'fr');
   assert.equal(normalizeConfig({ port: 0 }).port, 1883);
+  assert.equal(normalizeConfig({ host: 'mqtt://user:pw@openwb.local:1883' }).host, 'openwb.local');
+  assert.equal(normalizeConfig({ host: 'user:pw@192.0.2.30' }).host, '192.0.2.30');
+  assert.equal(normalizeConfig({ host: '[fe80::1]:1883' }).host, 'fe80::1');
+  assert.equal(normalizeConfig({ host: 'fe80::1' }).host, 'fe80::1');
 });

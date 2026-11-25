@@ -69,7 +69,7 @@ Créé quand l'openWB mesure l'un de ces éléments :
 Le widget **openWB** affiche solaire, maison et réseau en tuiles, une ligne par point de charge (état, puissance,
 batterie, mode) et la batterie maison, et des boutons de mode pour un point de charge (choisi dans les réglages du
 widget, sinon le premier) : Immédiate, Solaire, Éco et Arrêt pilotage autorisé, Arrêt seul sinon. Le mode en
-cours porte une coche. Deux réglages masquent les tuiles et les boutons.
+cours porte une coche. Trois réglages masquent les tuiles, les lignes des points de charge et les boutons.
 
 ## Déclencheurs de scène
 
@@ -115,6 +115,10 @@ message.
 - Changer le mode ou l'intensité modifie le **profil de charge** actif sur le point de charge, comme la simple API
   d'openWB. Si d'autres points de charge ou véhicules partagent ce profil, l'openWB leur applique aussi le
   changement (sauf si ses « profils de charge temporaires » sont actifs).
+- **L'arrêt ne demande pas le pilotage, et il dure** : sans profils de charge temporaires, il est enregistré dans le
+  profil du véhicule ; on en sort depuis l'openWB, ou en autorisant le pilotage dans Gladys. Avec les profils
+  temporaires, l'openWB revient au profil du véhicule au débranchement : un mode choisi depuis Gladys s'arrête avec
+  la session.
 - Les plans de charge à objectif, la charge programmée et les réglages de batterie ne se modifient pas depuis
   Gladys.
 - Développée sans le matériel : vos retours sont les bienvenus sur le forum.

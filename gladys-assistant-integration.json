@@ -681,6 +681,18 @@
           "default": true
         },
         {
+          "key": "show_status",
+          "type": "boolean",
+          "label": {
+            "en": "Show the chargepoints and the battery",
+            "fr": "Afficher les points de charge et la batterie",
+            "de": "Ladepunkte und Batterie anzeigen",
+            "es": "Mostrar los puntos de carga y la batería"
+          },
+          "required": false,
+          "default": true
+        },
+        {
           "key": "show_buttons",
           "type": "boolean",
           "label": {

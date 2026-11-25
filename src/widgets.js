@@ -6,7 +6,8 @@
 // of one chargepoint (the widget setting, or the first one): Instant, Solar,
 // Eco and Stop when control is allowed, Stop alone otherwise. The current mode
 // is marked by its icon (check-circle): the `primary` style is invisible in
-// dark mode (Gladys#3153). Tiles and buttons each have a setting to hide them.
+// dark mode (Gladys#3153). Tiles, status rows and buttons each have a setting to
+// hide them.
 //
 // Budget of the core: 8 components (3 tiles + 1 status + 4 buttons; the
 // caption "not connected" only comes without buttons), 2 texts. The values
@@ -183,7 +184,7 @@ export function buildContent(hub, { settings = {}, language = 'en' }) {
       icon: power > 50 ? 'battery-charging' : 'battery',
     });
   }
-  if (items.length > 0) {
+  if (items.length > 0 && shown(settings.show_status)) {
     components.push({ type: 'status', items });
   }
 

@@ -73,6 +73,11 @@ test('settings hide the tiles and the buttons; control off leaves Stop alone', a
     components.map((c) => c.type),
     ['status'],
   );
+  components = check(await content(world, { show_status: false }));
+  assert.deepEqual(
+    components.map((c) => c.type),
+    ['value', 'value', 'value', 'button'],
+  );
 });
 
 test('widget actions: a success toast, failures thrown', async (t) => {

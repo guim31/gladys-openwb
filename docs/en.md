@@ -67,7 +67,7 @@ Created when openWB measures any of it:
 The **openWB** widget shows solar, home and grid as tiles, one line per chargepoint (state, power, battery
 level, mode) and the home battery, and mode buttons for one chargepoint (chosen in the widget settings, the
 first one otherwise): Instant, Solar, Eco and Stop with control allowed, Stop alone otherwise. The current mode
-carries a check mark. Two settings hide the tiles and the buttons.
+carries a check mark. Three settings hide the tiles, the chargepoint lines and the buttons.
 
 ## Scene triggers
 
@@ -112,5 +112,8 @@ with a message.
 - Changing the mode or the current edits the **charging profile** active on the chargepoint, as openWB's own
   simple API does. If several chargepoints or vehicles share this profile, openWB applies the change to them
   too (unless its "temporary charging profiles" are on).
+- **Stop needs no control, and lasts**: without temporary charging profiles, it is saved in the profile of the
+  vehicle; leave it from openWB, or allow control in Gladys. With temporary charging profiles, openWB goes back to
+  the vehicle's profile when the vehicle is unplugged: a mode set from Gladys ends with the session.
 - Target charging plans, time charging and battery settings are not edited from Gladys.
 - Developed without the hardware: feedback welcome on the forum.

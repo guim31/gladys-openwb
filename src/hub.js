@@ -55,7 +55,8 @@ export const DEFAULT_TIMINGS = {
   processMaxWait: 2_000,
   // Connected, but no openWB topic after this: not the broker of an openWB 2.
   dataTimeout: 15_000,
-  confirmTimeout: 15_000,
+  // Publish and openWB's echo; two queued commands stay within the 25 s action timeout.
+  confirmTimeout: 10_000,
   tickInterval: 30_000,
   heartbeat: 6 * 3600_000,
   reconnectPeriod: 10_000,
@@ -116,8 +117,12 @@ export class Hub {
       await this.#close();
       this.state.reset();
       this.structure = null;
+      this.status = 'starting';
       await this.#open();
       return;
+    }
+    if (config.allow_control !== previous.allow_control) {
+      this.refreshWidget();
     }
     if (config.language !== previous.language && this.structure) {
       await this.publishDevices();
@@ -134,6 +139,8 @@ export class Hub {
     await this.reconfigure(config);
     await this.publishDevices();
     await this.flush();
+    // Every status, not only "online": a restarted Gladys knows none.
+    await this.#setStatus(this.status === 'starting' ? 'unreachable' : this.status);
     await this.#updateStatus();
   }
 
@@ -163,6 +170,8 @@ export class Hub {
       clientId: `gladys-openwb-${randomBytes(4).toString('hex')}`,
       clean: true,
       reconnectPeriod: this.timings.reconnectPeriod,
+      // A command published offline must fail now, not be sent on reconnection.
+      queueQoSZero: false,
       connectTimeout: this.timings.connectTimeout,
     });
     this.client = client;
@@ -182,6 +191,8 @@ export class Hub {
       client.subscribe(SUBSCRIPTIONS, { qos: 0 }, (err) => {
         if (err) {
           this.problems.fail('subscribe', `Cannot subscribe to openWB: ${err.message}`);
+        } else {
+          this.problems.recover('subscribe', 'Subscribed to openWB again');
         }
       });
       clearTimeout(this.dataTimer);
@@ -199,6 +210,7 @@ export class Hub {
         return;
       }
       if (this.state.apply(topic, payload)) {
+        this.#settleWaiters();
         this.#schedule();
       }
     });
@@ -231,7 +243,7 @@ export class Hub {
       if (wasConnected) {
         this.problems.fail('broker', `Lost the connection to the openWB broker at ${where}`);
       }
-      if (this.status !== 'refused') {
+      if (this.status !== 'refused' || wasConnected) {
         this.#setStatus('unreachable');
       }
     });
@@ -268,8 +280,26 @@ export class Hub {
     this.processTimer.unref?.();
   }
 
-  /** Fold what arrived: structure, sessions, scene events, states, status, waiters. */
+  /** Fold what arrived: waiters, structure, sessions, scene events, states, status. */
   async process() {
+    if (this.processing) {
+      this.processAgain = true;
+      return;
+    }
+    this.processing = true;
+    try {
+      do {
+        this.processAgain = false;
+        await this.#processOnce();
+      } while (this.processAgain && !this.stopped);
+    } finally {
+      this.processing = false;
+    }
+  }
+
+  async #processOnce() {
+    // Confirmations first: they must not wait for the calls to Gladys.
+    this.#settleWaiters();
     const structure = structureOf(this.state, this.structure);
     this.structure = structure;
     if (JSON.stringify(structure) !== this.publishedStructure) {
@@ -283,13 +313,16 @@ export class Hub {
     }
     this.#fire(this.tracker.update(this.#views(), this.now()));
     await this.flush();
+    await this.#updateStatus();
+  }
+
+  #settleWaiters() {
     for (const waiter of [...this.waiters]) {
       if (waiter.done()) {
         this.waiters.delete(waiter);
         waiter.resolve();
       }
     }
-    await this.#updateStatus();
   }
 
   #tick() {
@@ -427,7 +460,7 @@ export class Hub {
           break;
       }
       const key = TRIGGERS[event.type];
-      logger.info(`${view.name}: ${key}${data.vehicle ? ` (${data.vehicle})` : ''}`);
+      logger.debug(`${view.name}: ${key}${data.vehicle ? ` (${data.vehicle})` : ''}`);
       this.gladys
         .publishSceneEvent(key, data)
         .catch((err) => logger.warn(`Cannot fire ${key}: ${err.message}`));
@@ -457,12 +490,15 @@ export class Hub {
     return next;
   }
 
+  /** One timer for the publish and openWB's echo; `fail` ends it early. */
   #waitFor(done) {
-    if (done()) {
-      return Promise.resolve();
-    }
-    return new Promise((resolve, reject) => {
-      const waiter = {
+    let waiter;
+    const promise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.waiters.delete(waiter);
+        reject(new ActionFailure(failure('not_confirmed')));
+      }, this.timings.confirmTimeout);
+      waiter = {
         done,
         resolve: () => {
           clearTimeout(timer);
@@ -470,31 +506,39 @@ export class Hub {
         },
         reject: (err) => {
           clearTimeout(timer);
+          this.waiters.delete(waiter);
           reject(err);
         },
       };
-      const timer = setTimeout(() => {
-        this.waiters.delete(waiter);
-        reject(new ActionFailure(failure('not_confirmed')));
-      }, this.timings.confirmTimeout);
       this.waiters.add(waiter);
     });
+    return { promise, fail: (err) => waiter.reject(err) };
   }
 
   async #publishProfile(cp, edit, done) {
+    const client = this.client;
+    if (!client || !this.connected) {
+      throw new ActionFailure(failure('not_connected'));
+    }
     if (!cp.template?.chargemode) {
       throw new ActionFailure(failure('no_profile'));
     }
     const profile = structuredClone(cp.template);
     edit(profile);
     const topic = `openWB/set/chargepoint/${cp.id}/set/charge_template`;
-    const client = this.client;
-    await new Promise((resolve, reject) => {
-      client.publish(topic, JSON.stringify(profile), { qos: 0, retain: false }, (err) =>
-        err ? reject(new ActionFailure(failure('not_connected'))) : resolve(),
-      );
+    const confirmation = this.#waitFor(() => done(this.state.chargepoints.get(cp.id) ?? cp));
+    client.publish(topic, JSON.stringify(profile), { qos: 0, retain: false }, (err) => {
+      if (err) {
+        confirmation.fail(new ActionFailure(failure('not_connected')));
+      }
     });
-    await this.#waitFor(() => done(this.state.chargepoints.get(cp.id) ?? cp));
+    await confirmation.promise;
+  }
+
+  /** Commands that edit the same charging profile wait for each other. */
+  #queueKey(cp) {
+    const id = cp.template?.id;
+    return id === undefined || id === null ? `chargepoint:${cp.id}` : `profile:${id}`;
   }
 
   /**
@@ -510,7 +554,7 @@ export class Hub {
       throw new ActionFailure(failure('control_disabled'));
     }
     const cp = this.#chargepoint(externalId);
-    return this.#serialize(cp.id, async () => {
+    return this.#serialize(this.#queueKey(cp), async () => {
       const current = this.state.chargepoints.get(cp.id) ?? cp;
       if (modeOf(current) !== mode) {
         await this.#publishProfile(
@@ -538,7 +582,7 @@ export class Hub {
       throw new ActionFailure(failure('out_of_range', CURRENT.min, CURRENT.max));
     }
     const cp = this.#chargepoint(externalId);
-    return this.#serialize(cp.id, async () => {
+    return this.#serialize(this.#queueKey(cp), async () => {
       const current = this.state.chargepoints.get(cp.id) ?? cp;
       if (instantCurrentOf(current) !== amps) {
         await this.#publishProfile(
@@ -550,7 +594,8 @@ export class Hub {
           (now) => instantCurrentOf(now) === amps,
         );
       }
-      logger.info(`${chargepointName(cp)}: instant charging current ${amps} A`);
+      const name = this.deviceName(chargepointIds(this.gladys, cp.id).device, chargepointName(cp));
+      logger.info(`${name}: instant charging current ${amps} A`);
     });
   }
 

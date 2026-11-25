@@ -68,7 +68,7 @@ Wird angelegt, wenn die openWB etwas davon misst:
 Das Widget **openWB** zeigt Solar, Haus und Netz als Kacheln, eine Zeile pro Ladepunkt (Zustand, Leistung,
 Batteriestand, Modus) und die Hausbatterie, dazu Modus-Tasten für einen Ladepunkt (in den Widget-Einstellungen
 gewählt, sonst der erste): Sofortladen, PV-Laden, Eco-Laden und Stop bei erlaubter Steuerung, sonst nur Stop. Der
-aktuelle Modus trägt einen Haken. Zwei Einstellungen blenden Kacheln und Tasten aus.
+aktuelle Modus trägt einen Haken. Drei Einstellungen blenden Kacheln, Ladepunkt-Zeilen und Tasten aus.
 
 ## Szenen-Auslöser
 
@@ -113,5 +113,9 @@ Aktion mit einer Meldung fehl.
 - Modus oder Strom zu ändern bearbeitet das auf dem Ladepunkt aktive **Lade-Profil**, wie die simpleAPI der openWB.
   Teilen sich andere Ladepunkte oder Fahrzeuge dieses Profil, übernimmt die openWB die Änderung auch für sie (außer
   die „temporären Lade-Profile“ sind aktiv).
+- **Stop braucht keine Steuerung und bleibt bestehen**: ohne temporäre Lade-Profile wird er im Profil des Fahrzeugs
+  gespeichert; verlasse ihn in der openWB oder erlaube die Steuerung in Gladys. Mit temporären Lade-Profilen kehrt
+  die openWB beim Abstecken zum Profil des Fahrzeugs zurück: ein in Gladys gewählter Modus endet mit dem
+  Ladevorgang.
 - Zielladen-Pläne, zeitgesteuertes Laden und Batterie-Einstellungen werden nicht von Gladys aus geändert.
 - Ohne die Hardware entwickelt: Rückmeldungen im Forum sind willkommen.

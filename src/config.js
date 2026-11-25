@@ -16,13 +16,19 @@ export const DEFAULT_CONFIG = {
   language: 'fr',
 };
 
-/** `mqtt://openwb.local:1883`, `192.0.2.10`, `[::1]` -> the bare host name. */
+/** `mqtt://user:pw@openwb.local:1883/`, `192.0.2.10`, `[fe80::1]:1883` -> the bare host name. */
 function cleanHost(value) {
   let host = String(value ?? '').trim();
   host = host.replace(/^[a-z]+:\/\//i, '');
   host = host.replace(/\/.*$/, '');
-  // A port typed with the host (not an IPv6 address): dropped, the port field rules.
-  if (/^[^:[\]]+:\d+$/.test(host)) {
+  // Credentials typed in a URL: dropped (they would end up in the logs).
+  host = host.replace(/^.*@/, '');
+  // A port typed with the host: dropped, the port field rules.
+  const bracketed = host.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracketed) {
+    return bracketed[1];
+  }
+  if (/^[^:]+:\d+$/.test(host)) {
     host = host.replace(/:\d+$/, '');
   }
   return host;
