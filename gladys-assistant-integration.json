@@ -1,177 +1,698 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "openWB",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "The openWB 2 wallbox in local MQTT: charging state, power, modes, solar, grid and battery.",
+    "fr": "La borne openWB 2 en MQTT local : état de charge, puissance, modes, solaire, réseau et batterie.",
+    "de": "Die openWB 2 Wallbox lokal per MQTT: Ladezustand, Leistung, Modi, PV, Netz und Batterie.",
+    "es": "El cargador openWB 2 por MQTT local: estado de carga, potencia, modos, solar, red y batería."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-openwb:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-openwb/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Connect your openWB",
+        "fr": "Connecter votre openWB",
+        "de": "Verbinde deine openWB",
+        "es": "Conecte su openWB"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "The integration reads openWB 2.x through its MQTT broker, on your network. In openWB, under System → Sicherheit, allow unencrypted access (port 1883), or use port 8883 with TLS (required with user management). Changing modes and currents is off by default: Stop is always allowed.",
+        "fr": "L'intégration lit l'openWB 2.x par son broker MQTT, sur votre réseau. Dans l'openWB, sous System → Sicherheit, autorisez l'accès non chiffré (port 1883), ou utilisez le port 8883 avec TLS (obligatoire avec la gestion des utilisateurs). Le changement de mode et d'intensité est désactivé par défaut : l'arrêt reste toujours permis.",
+        "de": "Die Integration liest die openWB 2.x über ihren MQTT-Broker in deinem Netz. Erlaube in der openWB unter System → Sicherheit den unverschlüsselten Zugang (Port 1883) oder nutze Port 8883 mit TLS (Pflicht mit Benutzerverwaltung). Modi und Ströme zu ändern ist standardmäßig aus: Stop geht immer.",
+        "es": "La integración lee openWB 2.x por su broker MQTT, en su red. En openWB, en System → Sicherheit, permita el acceso sin cifrar (puerto 1883), o use el puerto 8883 con TLS (obligatorio con la gestión de usuarios). Cambiar modos e intensidades está desactivado por defecto: Parada siempre se permite."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/openWB/core/wiki",
+          "label": {
+            "en": "openWB documentation",
+            "fr": "Documentation openWB",
+            "de": "openWB-Dokumentation",
+            "es": "Documentación de openWB"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "host",
+      "type": "string",
+      "label": {
+        "en": "openWB address",
+        "fr": "Adresse de l'openWB",
+        "de": "Adresse der openWB",
+        "es": "Dirección de openWB"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "placeholder": {
+        "en": "e.g. 192.168.1.30",
+        "fr": "ex. 192.168.1.30",
+        "de": "z. B. 192.168.1.30",
+        "es": "p. ej. 192.168.1.30"
+      },
+      "description": {
+        "en": "IP address or host name of the openWB (its broker runs on it).",
+        "fr": "Adresse IP ou nom d'hôte de l'openWB (son broker tourne dessus).",
+        "de": "IP-Adresse oder Hostname der openWB (ihr Broker läuft darauf).",
+        "es": "Dirección IP o nombre de host de openWB (su broker funciona en ella)."
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
+      "key": "port",
       "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "label": {
+        "en": "MQTT port",
+        "fr": "Port MQTT",
+        "de": "MQTT-Port",
+        "es": "Puerto MQTT"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "1883 unencrypted, 8883 with TLS.",
+        "fr": "1883 sans chiffrement, 8883 avec TLS.",
+        "de": "1883 unverschlüsselt, 8883 mit TLS.",
+        "es": "1883 sin cifrar, 8883 con TLS."
+      },
+      "required": false,
+      "default": 1883,
+      "min": 1,
+      "max": 65535
     },
     {
-      "key": "unit",
+      "key": "tls",
+      "type": "boolean",
+      "label": {
+        "en": "TLS (port 8883)",
+        "fr": "TLS (port 8883)",
+        "de": "TLS (Port 8883)",
+        "es": "TLS (puerto 8883)"
+      },
+      "description": {
+        "en": "The self-signed certificate of openWB is accepted.",
+        "fr": "Le certificat auto-signé de l'openWB est accepté.",
+        "de": "Das selbstsignierte Zertifikat der openWB wird akzeptiert.",
+        "es": "Se acepta el certificado autofirmado de openWB."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "MQTT user (optional)",
+        "fr": "Utilisateur MQTT (facultatif)",
+        "de": "MQTT-Benutzer (optional)",
+        "es": "Usuario MQTT (opcional)"
+      },
+      "description": {
+        "en": "Only if the user management of openWB is on.",
+        "fr": "Seulement si la gestion des utilisateurs de l'openWB est active.",
+        "de": "Nur wenn die Benutzerverwaltung der openWB aktiv ist.",
+        "es": "Solo si la gestión de usuarios de openWB está activa."
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "MQTT password (optional)",
+        "fr": "Mot de passe MQTT (facultatif)",
+        "de": "MQTT-Passwort (optional)",
+        "es": "Contraseña MQTT (opcional)"
+      },
+      "required": false
+    },
+    {
+      "key": "allow_control",
+      "type": "boolean",
+      "label": {
+        "en": "Allow control",
+        "fr": "Autoriser le pilotage",
+        "de": "Steuerung erlauben",
+        "es": "Permitir el control"
+      },
+      "description": {
+        "en": "Lets Gladys change the charging mode and the instant charging current. Stop is always allowed.",
+        "fr": "Permet à Gladys de changer le mode de charge et l'intensité en charge immédiate. L'arrêt reste toujours permis.",
+        "de": "Erlaubt Gladys, Lademodus und Strom für Sofortladen zu ändern. Stop geht immer.",
+        "es": "Permite a Gladys cambiar el modo de carga y la intensidad de carga inmediata. Parada siempre se permite."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 20
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "vehicle_connected",
+      "label": {
+        "en": "Vehicle plugged in",
+        "fr": "Véhicule branché",
+        "de": "Fahrzeug angesteckt",
+        "es": "Vehículo conectado"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A vehicle is plugged into an openWB chargepoint.",
+        "fr": "Un véhicule est branché sur un point de charge openWB.",
+        "de": "Ein Fahrzeug wird an einem openWB-Ladepunkt angesteckt.",
+        "es": "Un vehículo se conecta a un punto de carga openWB."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "chargepoint",
+          "type": "string",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "vehicle",
+          "type": "string",
+          "label": {
+            "en": "Vehicle",
+            "fr": "Véhicule",
+            "de": "Fahrzeug",
+            "es": "Vehículo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "vehicle_disconnected",
+      "label": {
+        "en": "Vehicle unplugged",
+        "fr": "Véhicule débranché",
+        "de": "Fahrzeug abgesteckt",
+        "es": "Vehículo desconectado"
+      },
+      "description": {
+        "en": "A vehicle is unplugged, with the energy of its session.",
+        "fr": "Un véhicule est débranché, avec l'énergie de sa session.",
+        "de": "Ein Fahrzeug wird abgesteckt, mit der Energie seines Ladevorgangs.",
+        "es": "Un vehículo se desconecta, con la energía de su sesión."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "chargepoint",
+          "type": "string",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        },
+        {
+          "key": "vehicle",
+          "type": "string",
+          "label": {
+            "en": "Vehicle",
+            "fr": "Véhicule",
+            "de": "Fahrzeug",
+            "es": "Vehículo"
+          }
+        },
+        {
+          "key": "energy_kwh",
+          "type": "number",
+          "label": {
+            "en": "Energy of the session (kWh)",
+            "fr": "Énergie de la session (kWh)",
+            "de": "Energie des Ladevorgangs (kWh)",
+            "es": "Energía de la sesión (kWh)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "charging_started",
+      "label": {
+        "en": "Charging started",
+        "fr": "Charge démarrée",
+        "de": "Laden gestartet",
+        "es": "Carga iniciada"
+      },
+      "description": {
+        "en": "A charge starts. A short pause (clouds) is not a new charge.",
+        "fr": "Une charge démarre. Une courte pause (nuages) n'est pas une nouvelle charge.",
+        "de": "Ein Ladevorgang beginnt. Eine kurze Pause (Wolken) ist kein neuer Ladevorgang.",
+        "es": "Una carga empieza. Una pausa corta (nubes) no es una carga nueva."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Charging mode",
+            "fr": "Mode de charge",
+            "de": "Lademodus",
+            "es": "Modo de carga"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "instant_charging",
+              "label": {
+                "en": "Instant",
+                "fr": "Immédiate",
+                "de": "Sofortladen",
+                "es": "Inmediata"
+              }
+            },
+            {
+              "value": "pv_charging",
+              "label": {
+                "en": "Solar",
+                "fr": "Solaire",
+                "de": "PV-Laden",
+                "es": "Solar"
+              }
+            },
+            {
+              "value": "eco_charging",
+              "label": {
+                "en": "Eco",
+                "fr": "Éco",
+                "de": "Eco-Laden",
+                "es": "Eco"
+              }
+            },
+            {
+              "value": "scheduled_charging",
+              "label": {
+                "en": "Target",
+                "fr": "Objectif",
+                "de": "Zielladen",
+                "es": "Objetivo"
+              }
+            },
+            {
+              "value": "stop",
+              "label": {
+                "en": "Stop",
+                "fr": "Arrêt",
+                "de": "Stop",
+                "es": "Parada"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "chargepoint",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        },
+        {
+          "key": "vehicle",
+          "type": "string",
+          "label": {
+            "en": "Vehicle",
+            "fr": "Véhicule",
+            "de": "Fahrzeug",
+            "es": "Vehículo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "charging_finished",
+      "label": {
+        "en": "Charging finished",
+        "fr": "Charge terminée",
+        "de": "Laden beendet",
+        "es": "Carga terminada"
+      },
+      "description": {
+        "en": "A charge stopped for 10 minutes, or the vehicle was unplugged.",
+        "fr": "Une charge est arrêtée depuis 10 minutes, ou le véhicule a été débranché.",
+        "de": "Ein Ladevorgang steht seit 10 Minuten still, oder das Fahrzeug wurde abgesteckt.",
+        "es": "Una carga lleva 10 minutos parada, o el vehículo se desconectó."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "chargepoint",
+          "type": "string",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          }
+        },
+        {
+          "key": "vehicle",
+          "type": "string",
+          "label": {
+            "en": "Vehicle",
+            "fr": "Véhicule",
+            "de": "Fahrzeug",
+            "es": "Vehículo"
+          }
+        },
+        {
+          "key": "energy_kwh",
+          "type": "number",
+          "label": {
+            "en": "Energy of the session (kWh)",
+            "fr": "Énergie de la session (kWh)",
+            "de": "Energie des Ladevorgangs (kWh)",
+            "es": "Energía de la sesión (kWh)"
+          }
+        },
+        {
+          "key": "soc",
+          "type": "number",
+          "label": {
+            "en": "Vehicle battery (%, -1 unknown)",
+            "fr": "Batterie du véhicule (%, -1 inconnue)",
+            "de": "Fahrzeugbatterie (%, -1 unbekannt)",
+            "es": "Batería del vehículo (%, -1 desconocida)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "set_mode",
+      "label": {
+        "en": "Set the charging mode",
+        "fr": "Changer le mode de charge",
+        "de": "Lademodus einstellen",
+        "es": "Cambiar el modo de carga"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "On an openWB chargepoint. Stop is always allowed, the others need control.",
+        "fr": "Sur un point de charge openWB. Arrêt toujours permis, les autres demandent le pilotage.",
+        "de": "An einem openWB-Ladepunkt. Stop geht immer, die anderen brauchen die Steuerung.",
+        "es": "En un punto de carga openWB. Parada siempre, los demás requieren el control."
+      },
+      "timeout_seconds": 25,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          },
           "required": true
-        }
-      ],
-      "outputs": [
+        },
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Charging mode",
+            "fr": "Mode de charge",
+            "de": "Lademodus",
+            "es": "Modo de carga"
+          },
+          "required": true,
+          "default": "stop",
+          "options": [
+            {
+              "value": "instant_charging",
+              "label": {
+                "en": "Instant",
+                "fr": "Immédiate",
+                "de": "Sofortladen",
+                "es": "Inmediata"
+              }
+            },
+            {
+              "value": "pv_charging",
+              "label": {
+                "en": "Solar",
+                "fr": "Solaire",
+                "de": "PV-Laden",
+                "es": "Solar"
+              }
+            },
+            {
+              "value": "eco_charging",
+              "label": {
+                "en": "Eco",
+                "fr": "Éco",
+                "de": "Eco-Laden",
+                "es": "Eco"
+              }
+            },
+            {
+              "value": "scheduled_charging",
+              "label": {
+                "en": "Target",
+                "fr": "Objectif",
+                "de": "Zielladen",
+                "es": "Objetivo"
+              }
+            },
+            {
+              "value": "stop",
+              "label": {
+                "en": "Stop",
+                "fr": "Arrêt",
+                "de": "Stop",
+                "es": "Parada"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "set_current",
+      "label": {
+        "en": "Set the instant charging current",
+        "fr": "Régler l'intensité en charge immédiate",
+        "de": "Strom für Sofortladen einstellen",
+        "es": "Fijar la intensidad de carga inmediata"
+      },
+      "description": {
+        "en": "Current of the Instant mode (6 to 32 A), with control allowed.",
+        "fr": "Intensité du mode immédiat (6 à 32 A), pilotage autorisé.",
+        "de": "Strom des Sofortladens (6 bis 32 A), bei erlaubter Steuerung.",
+        "es": "Intensidad del modo inmediato (6 a 32 A), con control permitido."
+      },
+      "timeout_seconds": 25,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Chargepoint",
+            "fr": "Point de charge",
+            "de": "Ladepunkt",
+            "es": "Punto de carga"
+          },
+          "required": true
+        },
+        {
+          "key": "current",
+          "type": "number",
+          "label": {
+            "en": "Current (A)",
+            "fr": "Intensité (A)",
+            "de": "Strom (A)",
+            "es": "Intensidad (A)"
+          },
+          "required": true,
+          "default": 16,
+          "min": 6,
+          "max": 32
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "openwb",
+      "label": {
+        "en": "openWB",
+        "fr": "openWB",
+        "de": "openWB",
+        "es": "openWB"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Energy flow, chargepoints and the charging mode buttons.",
+        "fr": "Flux d'énergie, points de charge et boutons de mode de charge.",
+        "de": "Energiefluss, Ladepunkte und die Lademodus-Tasten.",
+        "es": "Flujo de energía, puntos de carga y botones de modo de carga."
+      },
+      "icon": "battery-charging",
+      "action_timeout_seconds": 25,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Chargepoint of the buttons",
+            "fr": "Point de charge des boutons",
+            "de": "Ladepunkt der Tasten",
+            "es": "Punto de carga de los botones"
+          },
+          "required": false
+        },
+        {
+          "key": "show_energy",
+          "type": "boolean",
+          "label": {
+            "en": "Show solar, home and grid",
+            "fr": "Afficher solaire, maison et réseau",
+            "de": "Solar, Haus und Netz anzeigen",
+            "es": "Mostrar solar, casa y red"
+          },
+          "required": false,
+          "default": true
+        },
+        {
+          "key": "show_buttons",
+          "type": "boolean",
+          "label": {
+            "en": "Show the mode buttons",
+            "fr": "Afficher les boutons de mode",
+            "de": "Modus-Tasten anzeigen",
+            "es": "Mostrar los botones de modo"
+          },
+          "required": false,
+          "default": true
+        }
+      ]
     }
   ]
 }

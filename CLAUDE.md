@@ -32,15 +32,20 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (index.js and tests share it)
+src/hub.js                        MQTT connection, processing, status, scene events, commands
+src/openwb/model.js               openWB 2.x topics folded into one state (OpenWbState) + helpers
+src/devices.js                    state -> Gladys devices (chargepoints, site) and feature states
+src/events.js                     scene triggers derived from successive states (SessionTracker)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget `openwb` (manifest `widgets`)
+src/texts.js                      every text in en/fr/de/es
+src/errors.js, src/problems.js    ActionFailure (red message), one log line per failure/recovery
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, against the SDK's fake Gladys and an in-memory broker
+test/fixtures/openwb-2-topics.json retained topics of an openWB 2.x, built from openWB/core dataclasses
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -259,3 +264,27 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## openWB (propre à cette intégration)
+
+- **Source de vérité : le code d'openWB/core** (`packages/control/**/…_data.py`, `helpermodules/setdata.py`,
+  `simpleAPI/simpleAPI_mqtt.py`, `data/config/mosquitto/`). Tous les topics sont retenus et en JSON
+  (`json.dumps`) ; un topic vidé (charge utile vide) signale un composant supprimé.
+- **Écriture** : comme la simpleAPI officielle, on modifie le profil `openWB/chargepoint/<id>/set/charge_template`
+  et on le publie sur `openWB/set/chargepoint/<id>/set/charge_template` (non retenu, pour qu'une commande
+  envoyée openWB arrêtée ne s'applique pas des heures plus tard). L'écho du profil par openWB confirme ; sans écho
+  en 15 s, l'action échoue (ACL du broker, régulation arrêtée). Commandes sérialisées par point de charge.
+- Le profil peut être **partagé** : sans « profils temporaires » (`openWB/general/temporary_charge_templates_active`),
+  openWB recopie le changement vers le profil du véhicule et les autres points de charge qui l'utilisent.
+- « Min + PV » n'est pas un mode en 2.x : c'est `pv_charging` avec `min_current`. `bidi_charging` existe mais
+  n'est pas proposé (affiché s'il est reçu).
+- **Puissances signées** : PV négatif en production, batterie positive en charge, compteur réseau positif en
+  import. Le compteur réseau est la tête de `openWB/counter/get/hierarchy` quand c'est un `counter`.
+- `get/connected_vehicle/soc` vaut `soc: 0, timestamp: null` sans module SoC : ne publier le SoC qu'avec un
+  horodatage (ou `get/soc` de la borne).
+- `set/log` est remis à zéro au débranchement : l'énergie de session est mémorisée tant que le véhicule est branché.
+- **Broker** : 1883 seulement si « Unverschlüsselten Zugang erlauben » (System → Sicherheit) ; 8883 TLS
+  auto-signé toujours ouvert ; la gestion des utilisateurs (dynsec) impose 8883 et ferme 1883.
+- Les identifiants d'appareil sont les numéros de point de charge d'openWB : uniques par installation.
+- Tests réels : Mosquitto en Docker et un simulateur qui rejoue `test/fixtures/openwb-2-topics.json` et l'écho de
+  setdata ; openWB/core ne s'exécute pas raisonnablement en conteneur (installation Raspberry Pi complète).
