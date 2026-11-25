@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-25
+
 ### Added
 
 - The openWB 2.x wallbox in Gladys, locally through its MQTT broker (port 1883, or 8883 with TLS, with or
@@ -22,3 +24,6 @@ the notes of the version's GitHub Release.
   always allowed. Every command waits for openWB's confirmation.
 - A dashboard widget: energy tiles, one line per chargepoint, mode buttons.
 - Documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-openwb/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-openwb/releases/tag/v1.0.0
