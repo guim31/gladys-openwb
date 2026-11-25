@@ -1,0 +1,339 @@
+{
+  "openWB/chargepoint/3/config": {
+    "configuration": {
+      "ip_address": "192.0.2.31",
+      "duo_num": 0
+    },
+    "_ev": 0,
+    "name": "Carport",
+    "color": "#007bff",
+    "type": "external_openwb",
+    "template": 0,
+    "connected_phases": 3,
+    "phase_1": 1,
+    "auto_phase_switch_hw": true,
+    "control_pilot_interruption_hw": true,
+    "id": 3,
+    "ocpp_chargebox_id": null,
+    "ocpp_chargebox_password": null
+  },
+  "openWB/chargepoint/3/get/plug_state": true,
+  "openWB/chargepoint/3/get/charge_state": true,
+  "openWB/chargepoint/3/get/power": 11040.0,
+  "openWB/chargepoint/3/get/currents": [16.0, 15.9, 16.0],
+  "openWB/chargepoint/3/get/voltages": [231.2, 230.4, 232.0],
+  "openWB/chargepoint/3/get/imported": 1848440.0,
+  "openWB/chargepoint/3/get/exported": 0,
+  "openWB/chargepoint/3/get/daily_imported": 5230.0,
+  "openWB/chargepoint/3/get/phases_in_use": 3,
+  "openWB/chargepoint/3/get/fault_state": 0,
+  "openWB/chargepoint/3/get/fault_str": "Kein Fehler.",
+  "openWB/chargepoint/3/get/state_str": "Ladevorgang aktiv.",
+  "openWB/chargepoint/3/get/evse_current": 16,
+  "openWB/chargepoint/3/get/max_evse_current": 32,
+  "openWB/chargepoint/3/get/serial_number": "OWB-0000-0000-0013",
+  "openWB/chargepoint/3/get/version": "2.1.7",
+  "openWB/chargepoint/3/get/connected_vehicle/info": {
+    "id": 1,
+    "name": "Mein Auto"
+  },
+  "openWB/chargepoint/3/get/connected_vehicle/soc": {
+    "fault_str": "Kein Fehler.",
+    "fault_state": 0,
+    "range_charged": 30.8,
+    "range_unit": "km",
+    "range": 212.0,
+    "soc": 54,
+    "timestamp": 1764081300
+  },
+  "openWB/chargepoint/3/get/connected_vehicle/config": {
+    "average_consumption": 17,
+    "charge_template": 3,
+    "chargemode": "pv_charging",
+    "current_plan": null,
+    "ev_template": 0,
+    "time_charging_in_use": false
+  },
+  "openWB/chargepoint/3/set/charge_template": {
+    "id": 3,
+    "name": "Standard-Lade-Profil",
+    "load_default": false,
+    "time_charging": {
+      "active": false,
+      "plans": []
+    },
+    "chargemode": {
+      "selected": "pv_charging",
+      "eco_charging": {
+        "current": 6,
+        "dc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "max_price": 0.0002,
+        "phases_to_use": 3
+      },
+      "pv_charging": {
+        "dc_min_current": 145,
+        "dc_min_soc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "min_current": 0,
+        "min_soc_current": 10,
+        "min_soc": 0,
+        "phases_to_use": 0,
+        "phases_to_use_min_soc": 3
+      },
+      "scheduled_charging": {
+        "plans": []
+      },
+      "instant_charging": {
+        "current": 16,
+        "dc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "phases_to_use": 3
+      }
+    }
+  },
+  "openWB/chargepoint/3/set/log": {
+    "chargemode_log_entry": "_",
+    "charged_energy_by_source": {
+      "bat": 0,
+      "cp": 0,
+      "grid": 0,
+      "pv": 0
+    },
+    "costs": 0,
+    "end": null,
+    "exported_at_mode_switch": 0,
+    "exported_at_plugtime": 0,
+    "exported_since_mode_switch": 0,
+    "exported_since_plugged": 0,
+    "imported_at_mode_switch": 1843210,
+    "imported_at_plugtime": 1843210,
+    "imported_since_mode_switch": 5230,
+    "imported_since_plugged": 5230,
+    "range_charged": 30.8,
+    "time_charged": "1:12",
+    "timestamp_start_charging": 1764081000.0,
+    "timestamp_mode_switch": null,
+    "ev": 1,
+    "prio": false,
+    "rfid": null,
+    "serial_number": null,
+    "soc_at_start": null,
+    "soc_at_end": null,
+    "range_at_start": null,
+    "range_at_end": null,
+    "odometer": null
+  },
+  "openWB/chargepoint/3/set/current": 16,
+  "openWB/chargepoint/3/set/manual_lock": false,
+  "openWB/chargepoint/3/set/plug_state_prev": true,
+  "openWB/chargepoint/3/set/charge_state_prev": true,
+  "openWB/chargepoint/4/config": {
+    "configuration": {
+      "ip_address": "192.0.2.31",
+      "duo_num": 0
+    },
+    "_ev": 0,
+    "name": "Garage",
+    "color": "#007bff",
+    "type": "external_openwb",
+    "template": 0,
+    "connected_phases": 3,
+    "phase_1": 1,
+    "auto_phase_switch_hw": true,
+    "control_pilot_interruption_hw": true,
+    "id": 4,
+    "ocpp_chargebox_id": null,
+    "ocpp_chargebox_password": null
+  },
+  "openWB/chargepoint/4/get/plug_state": false,
+  "openWB/chargepoint/4/get/charge_state": false,
+  "openWB/chargepoint/4/get/power": 0.0,
+  "openWB/chargepoint/4/get/currents": [0.0, 0.0, 0.0],
+  "openWB/chargepoint/4/get/voltages": [231.2, 230.4, 232.0],
+  "openWB/chargepoint/4/get/imported": 923100.0,
+  "openWB/chargepoint/4/get/exported": 0,
+  "openWB/chargepoint/4/get/daily_imported": 0,
+  "openWB/chargepoint/4/get/phases_in_use": 0,
+  "openWB/chargepoint/4/get/fault_state": 0,
+  "openWB/chargepoint/4/get/fault_str": "Kein Fehler.",
+  "openWB/chargepoint/4/get/state_str": "Kein Fahrzeug angesteckt.",
+  "openWB/chargepoint/4/get/evse_current": 0,
+  "openWB/chargepoint/4/get/max_evse_current": 32,
+  "openWB/chargepoint/4/get/serial_number": "OWB-0000-0000-0014",
+  "openWB/chargepoint/4/get/version": "2.1.7",
+  "openWB/chargepoint/4/get/connected_vehicle/info": {
+    "id": 0,
+    "name": "Ladepunkt"
+  },
+  "openWB/chargepoint/4/get/connected_vehicle/soc": {
+    "fault_str": "Kein Fehler.",
+    "fault_state": 0,
+    "range_charged": 0,
+    "range_unit": "km",
+    "range": 0,
+    "soc": 0,
+    "timestamp": null
+  },
+  "openWB/chargepoint/4/get/connected_vehicle/config": {
+    "average_consumption": 17,
+    "charge_template": 4,
+    "chargemode": "instant_charging",
+    "current_plan": null,
+    "ev_template": 0,
+    "time_charging_in_use": false
+  },
+  "openWB/chargepoint/4/set/charge_template": {
+    "id": 4,
+    "name": "Standard-Lade-Profil",
+    "load_default": false,
+    "time_charging": {
+      "active": false,
+      "plans": []
+    },
+    "chargemode": {
+      "selected": "instant_charging",
+      "eco_charging": {
+        "current": 6,
+        "dc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "max_price": 0.0002,
+        "phases_to_use": 3
+      },
+      "pv_charging": {
+        "dc_min_current": 145,
+        "dc_min_soc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "min_current": 0,
+        "min_soc_current": 10,
+        "min_soc": 0,
+        "phases_to_use": 0,
+        "phases_to_use_min_soc": 3
+      },
+      "scheduled_charging": {
+        "plans": []
+      },
+      "instant_charging": {
+        "current": 16,
+        "dc_current": 145,
+        "limit": {
+          "selected": "none",
+          "amount": 50000,
+          "soc": 50
+        },
+        "phases_to_use": 3
+      }
+    }
+  },
+  "openWB/chargepoint/4/set/log": {
+    "chargemode_log_entry": "_",
+    "charged_energy_by_source": {
+      "bat": 0,
+      "cp": 0,
+      "grid": 0,
+      "pv": 0
+    },
+    "costs": 0,
+    "end": null,
+    "exported_at_mode_switch": 0,
+    "exported_at_plugtime": 0,
+    "exported_since_mode_switch": 0,
+    "exported_since_plugged": 0,
+    "imported_at_mode_switch": 0,
+    "imported_at_plugtime": 0,
+    "imported_since_mode_switch": 0,
+    "imported_since_plugged": 0,
+    "range_charged": 0,
+    "time_charged": 0,
+    "timestamp_start_charging": null,
+    "timestamp_mode_switch": null,
+    "ev": -1,
+    "prio": false,
+    "rfid": null,
+    "serial_number": null,
+    "soc_at_start": null,
+    "soc_at_end": null,
+    "range_at_start": null,
+    "range_at_end": null,
+    "odometer": null
+  },
+  "openWB/chargepoint/4/set/current": 0,
+  "openWB/chargepoint/4/set/manual_lock": false,
+  "openWB/chargepoint/4/set/plug_state_prev": false,
+  "openWB/chargepoint/4/set/charge_state_prev": false,
+  "openWB/counter/get/hierarchy": [
+    {
+      "id": 0,
+      "type": "counter",
+      "children": [
+        {
+          "id": 3,
+          "type": "cp",
+          "children": []
+        },
+        {
+          "id": 4,
+          "type": "cp",
+          "children": []
+        },
+        {
+          "id": 1,
+          "type": "inverter",
+          "children": []
+        },
+        {
+          "id": 2,
+          "type": "bat",
+          "children": []
+        }
+      ]
+    }
+  ],
+  "openWB/counter/0/get/power": -2350.0,
+  "openWB/counter/0/get/imported": 4523100.0,
+  "openWB/counter/0/get/exported": 3120450.0,
+  "openWB/counter/0/get/powers": [-780.0, -790.0, -780.0],
+  "openWB/counter/0/get/currents": [-3.4, -3.4, -3.4],
+  "openWB/counter/0/get/voltages": [231.0, 230.0, 232.0],
+  "openWB/counter/0/get/frequency": 50.0,
+  "openWB/counter/0/get/daily_imported": 2340.0,
+  "openWB/counter/0/get/daily_exported": 12010.0,
+  "openWB/counter/0/get/fault_state": 0,
+  "openWB/counter/0/get/fault_str": "Kein Fehler.",
+  "openWB/counter/set/home_consumption": 812.0,
+  "openWB/counter/set/loadmanagement_active": false,
+  "openWB/pv/get/power": -14630.0,
+  "openWB/pv/get/exported": 9876540.0,
+  "openWB/pv/get/daily_exported": 38420.0,
+  "openWB/pv/1/get/power": -14630.0,
+  "openWB/pv/1/get/exported": 9876540.0,
+  "openWB/pv/1/get/fault_state": 0,
+  "openWB/bat/get/power": 438.0,
+  "openWB/bat/get/soc": 72,
+  "openWB/bat/get/imported": 1203000.0,
+  "openWB/bat/get/exported": 1100000.0,
+  "openWB/bat/2/get/power": 438.0,
+  "openWB/bat/2/get/soc": 72,
+  "openWB/system/version": "2.1.7",
+  "openWB/general/temporary_charge_templates_active": false
+}

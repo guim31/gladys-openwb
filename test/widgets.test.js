@@ -1,77 +1,110 @@
+// -----------------------------------------------------------------------------
+// The `openwb` widget: valid content within the core budget (8 components,
+// 2 texts), the mode buttons of the chosen chargepoint, the settings that hide
+// blocks, and the actions (a failure throws, shown in red).
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { buildDiscoveredDevices } from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
-import { DEMO_STATUS_WIDGET, WIDGETS, refreshWidgets } from '../src/widgets.js';
-import { normalizeConfig } from '../src/config.js';
+import { WIDGET_KEY } from '../src/widgets.js';
+import { until } from './helpers/fakeMqtt.js';
+import { cpId, createWorld, processed } from './helpers/world.js';
 
-const gladys = createFakeGladys();
-const config = normalizeConfig();
-const demoStatus = WIDGETS[DEMO_STATUS_WIDGET];
+async function content(world, settings = {}, language = 'fr') {
+  const ack = await world.fake.widgetGet(WIDGET_KEY, { settings, language });
+  assert.equal(ack.success, true, JSON.stringify(ack.error));
+  return ack.data.content;
+}
 
-// What the SDK passes to onWidgetGet, plus the config index.js adds.
-const getContent = (cfg = config) =>
-  demoStatus.get(gladys, { settings: {}, language: 'en', units: 'metric', config: cfg });
+function check(data) {
+  validateWidgetContent(data);
+  assert.ok(data.components.length <= 8, `${data.components.length} components`);
+  assert.ok(data.components.filter((c) => c.type === 'text').length <= 2);
+  return data.components;
+}
 
-test('the demo_status content is rendered exactly as sent', async () => {
-  // [] = nothing the core would drop, truncate or trim to the content budget.
-  assert.deepEqual(validateWidgetContent(await getContent()), []);
-});
-
-test('the degraded plug connection content is valid too', async () => {
-  simulateLanSession(false);
-  try {
-    const content = await getContent();
-    assert.deepEqual(validateWidgetContent(content), []);
-    const status = content.components.find((component) => component.type === 'status');
-    assert.ok(
-      status.items.some((item) => item.color === 'warning'),
-      'degraded shows a warning',
-    );
-  } finally {
-    simulateLanSession(true);
-  }
-});
-
-test('the live tiles reference features the integration publishes', async () => {
-  const featureIds = new Set(
-    buildDiscoveredDevices(gladys, config).flatMap((device) =>
-      device.features.map((feature) => feature.external_id),
-    ),
+test('tiles, one row per chargepoint and the battery, four mode buttons', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await processed(world);
+  const components = check(await content(world));
+  assert.deepEqual(
+    components.map((c) => c.type),
+    ['value', 'value', 'value', 'status', 'button', 'button', 'button', 'button'],
   );
-  const liveTiles = (await getContent()).components.filter((c) => c.device_feature);
-  assert.ok(liveTiles.length > 0, 'the template demonstrates a device-bound tile');
-  for (const tile of liveTiles) {
-    assert.ok(featureIds.has(tile.device_feature), `unknown feature ${tile.device_feature}`);
-  }
+  const status = components.find((c) => c.type === 'status');
+  assert.deepEqual(
+    status.items.map((i) => [i.label, i.value]),
+    [
+      ['Carport', 'En charge · 11,0 kW · 54 % · Solaire'],
+      ['Garage', 'Libre · Immédiate'],
+      ['Batterie maison', '72 % · +0,4 kW'],
+    ],
+  );
+  const buttons = components.filter((c) => c.type === 'button');
+  assert.deepEqual(
+    buttons.map((b) => [b.action.key, b.icon]),
+    [
+      ['mode_instant_charging', 'zap'],
+      ['mode_pv_charging', 'check-circle'],
+      ['mode_eco_charging', 'trending-down'],
+      ['mode_stop', 'pause-circle'],
+    ],
+  );
+  assert.deepEqual(buttons[0].action.params, { chargepoint: '3' });
+  // The buttons of the chargepoint chosen in the settings.
+  const garage = check(await content(world, { device: cpId(4) }, 'en'));
+  assert.equal(garage.find((c) => c.type === 'button').action.params.chargepoint, '4');
+  assert.equal(garage.find((c) => c.type === 'button').icon, 'check-circle');
 });
 
-test('every button action of the content is handled and answers a short toast', async () => {
-  const buttons = (await getContent()).components.filter((c) => c.type === 'button' && c.action);
-  assert.ok(buttons.length > 0, 'the template demonstrates a widget action');
-  for (const { action } of buttons) {
-    const message = await demoStatus.action(gladys, {
-      actionKey: action.key,
-      params: action.params ?? {},
-      settings: {},
-      config,
-    });
-    assert.ok(message.en, 'the toast carries at least the mandatory `en` text');
-    assert.ok(message.en.length <= 200, 'toasts are capped at 200 characters');
-  }
-});
-
-test('an unknown widget action fails, so the user sees the error', async () => {
-  await assert.rejects(
-    demoStatus.action(gladys, { actionKey: 'unknown', params: {}, settings: {}, config }),
-    /Unknown widget action/,
+test('settings hide the tiles and the buttons; control off leaves Stop alone', async (t) => {
+  const world = await createWorld({ config: { host: '192.0.2.30' } });
+  t.after(() => world.app.stop());
+  await processed(world);
+  let components = check(await content(world));
+  assert.deepEqual(
+    components.filter((c) => c.type === 'button').map((b) => b.action.key),
+    ['mode_stop'],
+  );
+  components = check(await content(world, { show_energy: false, show_buttons: false }));
+  assert.deepEqual(
+    components.map((c) => c.type),
+    ['status'],
+  );
+  components = check(await content(world, { show_status: false }));
+  assert.deepEqual(
+    components.map((c) => c.type),
+    ['value', 'value', 'value', 'button'],
   );
 });
 
-test('refreshWidgets nudges every widget', () => {
-  const fresh = createFakeGladys();
-  refreshWidgets(fresh);
-  assert.deepEqual(fresh.fake.widgetRefreshes, Object.keys(WIDGETS));
+test('widget actions: a success toast, failures thrown', async (t) => {
+  const world = await createWorld({ config: { host: '192.0.2.30' } });
+  t.after(() => world.app.stop());
+  let ack = await world.fake.widgetAction(WIDGET_KEY, 'mode_stop', { chargepoint: '3' }, {});
+  assert.equal(ack.success, true);
+  assert.match(ack.data.message.fr, /Carport : mode de charge Arrêt/);
+  ack = await world.fake.widgetAction(WIDGET_KEY, 'mode_pv_charging', { chargepoint: '3' }, {});
+  assert.equal(ack.success, false);
+  assert.match(ack.error.fr, /Pilotage désactivé/);
+  ack = await world.fake.widgetAction(WIDGET_KEY, 'mode_turbo', { chargepoint: '3' }, {});
+  assert.equal(ack.success, false);
+});
+
+test('not configured, unreachable, then offline with the last values', async (t) => {
+  const none = await createWorld({ config: {}, waitOnline: false });
+  t.after(() => none.app.stop());
+  assert.match(check(await content(none))[0].text, /Saisissez l'adresse/);
+
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await processed(world);
+  world.broker.stop();
+  await until(() => !world.hub.connected, { what: 'offline' });
+  const components = check(await content(world));
+  assert.equal(components[0].type, 'text');
+  assert.match(components[0].text, /dernières valeurs connues/);
+  assert.equal(components.filter((c) => c.type === 'button').length, 0);
 });

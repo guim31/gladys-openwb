@@ -1,61 +1,119 @@
-# Demo Devices Template
+# openWB
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+The integration brings an **openWB 2.x** wallbox into Gladys, locally, through the MQTT broker that runs on the
+openWB. It follows every chargepoint live (plugged in, charging, power, energy), the grid, solar and battery
+meters openWB knows, fires scene triggers when a vehicle is plugged in or a charge ends, and can change the
+charging mode and the instant charging current.
 
-## What you get
+> Developed without the hardware, from the source code of openWB 2 (openWB/core) and tested against a real
+> Mosquitto broker replaying its topics: feedback welcome.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## Requirements
+
+- An openWB running the **2.x** software (series 2, Pro, or any openWB updated to 2.x). The 1.9 software uses
+  other topics and is not supported.
+- Gladys 5.1 or later, on the same network as the openWB.
+- Access to the broker of the openWB:
+  - **port 1883 (unencrypted)**: in openWB, under _System → Sicherheit_, turn on _Unverschlüsselten Zugang
+    erlauben_;
+  - or **port 8883 with TLS**, open by default: tick _TLS_ in the integration. openWB uses a self-signed
+    certificate, which the integration accepts.
+- If the user management of openWB (_Benutzerverwaltung_) is on: port 8883 with TLS (openWB then closes port
+  1883), an openWB user and its password. To change modes, this user needs write access to its chargepoints.
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+| Field                         | What to enter                                               |
+| ----------------------------- | ----------------------------------------------------------- |
+| openWB address                | IP address or host name of the openWB, e.g. `192.168.1.30`  |
+| MQTT port                     | `1883` (unencrypted) or `8883` (TLS)                        |
+| TLS                           | Ticked for port 8883                                        |
+| MQTT user and password        | Only with the user management of openWB                     |
+| Allow control                 | Off by default: lets Gladys change the mode and the current |
+| Language of the feature names | Used once, when the devices are created; French by default  |
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+Then use **Test the connection**: it lists the chargepoints openWB reports. The devices appear in the
+**Discovery** tab of the integration: add those you want.
 
-## Actions
+**Stop is always allowed**, even with control off: stopping a charge is never dangerous. The other modes and
+the current need _Allow control_.
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+## The devices
 
-## Scenes
+### Chargepoint
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+One device per chargepoint of openWB, named as in openWB:
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **Charging mode** (controllable): Instant, Solar, Eco, Target, Stop. openWB's _Min + PV_ is the Solar mode
+  with a minimum current set in its charging profile;
+- **Vehicle plugged in**, **Charging state** (charging, plugged in, paused by the car, waiting for openWB, free);
+- **Charging power** (kW), **Charging current** (A, highest phase);
+- **Instant charging current** (controllable, 6 to 32 A): the current of the Instant mode;
+- **Session energy** (kWh): the energy of the current session, kept after unplugging;
+- **Charger meter** (kWh): the meter of the chargepoint, which the Gladys energy module can use;
+- **Vehicle battery** (%), only when openWB knows it (a SoC module for the vehicle, or a charger that reads it).
 
-## Dashboard
+### openWB site
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+Created when openWB measures any of it:
+
+- **Grid** (W, import positive, export negative), **Grid import** and **Grid export** (kWh meters);
+- **Home consumption** (W);
+- **Solar production** (W) and **Solar yield** (kWh meter);
+- **Home battery** (%), **Battery charging** and **Battery discharging** (W).
+
+## Dashboard widget
+
+The **openWB** widget shows solar, home and grid as tiles, one line per chargepoint (state, power, battery
+level, mode) and the home battery, and mode buttons for one chargepoint (chosen in the widget settings, the
+first one otherwise): Instant, Solar, Eco and Stop with control allowed, Stop alone otherwise. The current mode
+carries a check mark. Three settings hide the tiles, the chargepoint lines and the buttons.
+
+## Scene triggers
+
+| Trigger            | When                                                          | Variables                             |
+| ------------------ | ------------------------------------------------------------- | ------------------------------------- |
+| Vehicle plugged in | A vehicle is plugged into a chargepoint                       | chargepoint, vehicle                  |
+| Vehicle unplugged  | A vehicle is unplugged                                        | chargepoint, vehicle, energy (kWh)    |
+| Charging started   | A charge starts (a short pause is not a new charge)           | chargepoint, vehicle                  |
+| Charging finished  | A charge stopped for 10 minutes, or the vehicle was unplugged | chargepoint, vehicle, energy, battery |
+
+Each trigger can be limited to one chargepoint; _Charging started_ also to one mode. The vehicle is the one
+openWB assigned to the chargepoint. The battery level is -1 when openWB does not know it.
+
+## Scene actions
+
+- **Set the charging mode** of a chargepoint. Stop is always allowed, the other modes need control.
+- **Set the instant charging current** (6 to 32 A), with control allowed.
+
+The integration waits until openWB has applied the change (15 seconds at most); otherwise the action fails
+with a message.
+
+## Scene examples
+
+- At 22:00, set the mode to Instant (off-peak hours), and back to Solar at 6:00.
+- When a charge is finished, send a message with the energy charged.
+- When the grid price is high (another integration), set the chargepoint to Stop.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"The MQTT broker of openWB does not answer"**: check the address, and that the unencrypted access is allowed in
+  openWB for port 1883 (or use 8883 with TLS).
+- **"refused the user name or the password"**: the user management of openWB is on; use port 8883 with TLS and an
+  openWB user.
+- **"no openWB 2.x data"**: the broker answers but publishes no `openWB/...` topic. Is it an openWB 2? A 1.9
+  software is not supported.
+- **"openWB did not apply the change"**: openWB is not running its control loop, or the MQTT user may not write
+  to this chargepoint.
+
+## Limitations
+
+- openWB 2.x only, through its MQTT broker; no cloud.
+- Changing the mode or the current edits the **charging profile** active on the chargepoint, as openWB's own
+  simple API does. If several chargepoints or vehicles share this profile, openWB applies the change to them
+  too (unless its "temporary charging profiles" are on).
+- **Stop needs no control, and lasts**: without temporary charging profiles, it is saved in the profile of the
+  vehicle; leave it from openWB, or allow control in Gladys. With temporary charging profiles, openWB goes back to
+  the vehicle's profile when the vehicle is unplugged: a mode set from Gladys ends with the session.
+- Target charging plans, time charging and battery settings are not edited from Gladys.
+- Developed without the hardware: feedback welcome on the forum.

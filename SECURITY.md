@@ -30,6 +30,11 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+The integration stores nothing under `/data`. Its configuration (the address of the openWB, and the optional
+MQTT user and password) is kept by Gladys and never logged. It only talks to the MQTT broker of the openWB, on
+the local network, and publishes only to `openWB/set/chargepoint/<id>/set/charge_template`, when the user changes
+a mode or a current. With TLS (port 8883), the self-signed certificate of openWB is accepted without
+verification: use it on a trusted network.
+
 Out of scope: Gladys Assistant itself (see its
-[security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+[security policy](https://github.com/GladysAssistant/Gladys/security/policy)), openWB and its broker.
